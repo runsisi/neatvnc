@@ -1556,7 +1556,7 @@ static enum rfb_encodings choose_frame_encoding(struct nvnc_client* client,
 #ifdef ENABLE_OPEN_H264
 		case RFB_ENCODING_OPEN_H264:
 			// h264 is useless for sw frames
-			if (fb->type != NVNC_FB_GBM_BO)
+			if (fb->type != NVNC_FB_GBM_BO && fb->type != NVNC_FB_AVFRAME)
 				break;
 			return client->encodings[i];
 #endif

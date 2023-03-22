@@ -152,6 +152,7 @@ configure_file(
 	output: 'config.h',
 	configuration: config,
 )
+config_inc = include_directories('.')
 
 neatvnc = library(
 	'neatvnc',
@@ -163,7 +164,7 @@ neatvnc = library(
 )
 
 neatvnc_dep = declare_dependency(
-	include_directories: inc,
+	include_directories: [ inc, config_inc ],
 	link_with: neatvnc,
 )
 

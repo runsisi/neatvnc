@@ -119,6 +119,10 @@ static void hw_frame_desc_free(void* opaque, uint8_t* data)
 // TODO: Maybe do this once per frame inside nvnc_fb?
 static AVFrame* fb_to_avframe(struct nvnc_fb* fb)
 {
+	if (fb->type == NVNC_FB_AVFRAME) {
+		return fb->frame;
+	}
+
 	struct gbm_bo* bo = fb->bo;
 
 	int n_planes = gbm_bo_get_plane_count(bo);
@@ -483,6 +487,9 @@ static int find_render_node(char *node, size_t maxlen) {
 		break;
 	}
 
+	strncpy(node, "/dev/dri/renderD128", maxlen);
+	node[maxlen - 1] = '\0';
+
 	drmFreeDevices(devices, n);
 	return r;
 }
@@ -605,7 +612,7 @@ void h264_encoder_request_keyframe(struct h264_encoder* self)
 
 void h264_encoder_feed(struct h264_encoder* self, struct nvnc_fb* fb)
 {
-	assert(fb->type == NVNC_FB_GBM_BO);
+	assert(fb->type == NVNC_FB_GBM_BO || fb->type == NVNC_FB_AVFRAME);
 
 	// TODO: Add transform filter
 	assert(fb->transform == NVNC_TRANSFORM_NORMAL);

@@ -25,6 +25,7 @@
 #include "common.h"
 
 struct gbm_bo;
+typedef struct AVFrame AVFrame;
 
 struct nvnc_fb {
 	struct nvnc_common common;
@@ -47,6 +48,9 @@ struct nvnc_fb {
 	/* dmabuf attributes */
 	struct gbm_bo* bo;
 	void* bo_map_handle;
+
+	/* avframe */
+	AVFrame* frame;
 };
 
 void nvnc_fb_hold(struct nvnc_fb* fb);

@@ -71,6 +71,7 @@ enum nvnc_fb_type {
 	NVNC_FB_UNSPEC = 0,
 	NVNC_FB_SIMPLE,
 	NVNC_FB_GBM_BO,
+	NVNC_FB_AVFRAME,
 };
 
 /* This is the same as wl_output_transform */

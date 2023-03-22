@@ -28,3 +28,5 @@ if libpng.found()
 		]
 	)
 endif
+
+subdir('x11')
