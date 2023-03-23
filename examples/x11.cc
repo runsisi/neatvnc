@@ -13,6 +13,10 @@ int main() {
 
     int screen = DefaultScreen(dpy);
     Window root = RootWindow(dpy, screen);
+    int w = DisplayWidth(dpy, screen);
+    int h = DisplayHeight(dpy, screen);
+    int off_x = 0;
+    int off_y = 0;
 
     int major, minor;
     XCompositeQueryVersion(dpy, &major, &minor);
