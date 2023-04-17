@@ -54,9 +54,17 @@ zlib = dependency('zlib')
 gbm = dependency('gbm', required: get_option('gbm'))
 libdrm = dependency('libdrm', required: get_option('h264'))
 
-libavcodec = dependency('libavcodec', required: get_option('h264'))
-libavfilter = dependency('libavfilter', required: get_option('h264'))
-libavutil = dependency('libavutil', required: get_option('h264'))
+ffmpeg_root = get_option('ffmpeg_root')
+if ffmpeg_root == ''
+    libavcodec = dependency('libavcodec', required: get_option('h264'))
+    libavfilter = dependency('libavfilter', required: get_option('h264'))
+    libavutil = dependency('libavutil', required: get_option('h264'))
+else
+    cc = meson.get_compiler('c')
+    libavcodec = cc.find_library('avcodec', dirs : [ ffmpeg_root / 'libavcodec' ], static : false)
+    libavfilter =cc.find_library('avfilter', dirs : [ ffmpeg_root / 'libavfilter' ], static : false)
+    libavutil =cc.find_library('avutil', dirs : [ ffmpeg_root / 'libavutil' ], static : false)
+endif
 
 aml_version = ['>=0.3.0', '<0.4.0']
 aml_project = subproject('aml', required: false, version: aml_version)
