@@ -10,6 +10,7 @@
 
 #include <libavutil/pixdesc.h>
 
+#include "config.h"
 #include "kmsgrab.h"
 
 
