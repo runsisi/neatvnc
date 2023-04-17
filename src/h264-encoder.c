@@ -120,7 +120,8 @@ static void hw_frame_desc_free(void* opaque, uint8_t* data)
 static AVFrame* fb_to_avframe(struct nvnc_fb* fb)
 {
 	if (fb->type == NVNC_FB_AVFRAME) {
-		return fb->frame;
+		AVFrame* frame = av_frame_clone(fb->frame);
+		return frame;
 	}
 
 	struct gbm_bo* bo = fb->bo;
