@@ -83,6 +83,13 @@ static void on_sigint()
 	aml_exit(aml_get_default());
 }
 
+static void on_fb_release(struct nvnc_fb* fb, void* /*context*/)
+{
+	if (fb->is_external) {
+		av_frame_free(&fb->frame);
+	}
+}
+
 static void on_tick(void* obj)
 {
 	struct nvnc* server = aml_get_userdata(obj);
@@ -111,6 +118,7 @@ static void on_tick(void* obj)
 	}
 
 	struct nvnc_fb* fb = nvnc_fb_from_avframe(frame, kms->drm_format);
+	nvnc_fb_set_release_fn(fb, on_fb_release, NULL);
 	struct pixman_region16 damage;
 	pixman_region_init_rect(&damage, 0, 0, fb->width, fb->height);
 	nvnc_display_feed_buffer(server->display, fb, &damage);
