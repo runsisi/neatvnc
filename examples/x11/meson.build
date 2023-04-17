@@ -11,7 +11,8 @@ executable(
 	'x11',
 	[
 		'x11.c',
-		'kmsgrab.c'
+		'kmsgrab.c',
+		'filter.c'
 	],
 	dependencies: [
 		neatvnc_dep,
@@ -22,6 +23,7 @@ executable(
 		xcomposite,
 		libdrm,
 		libavcodec,
+		libavfilter,
 		libavutil,
 	]
 )

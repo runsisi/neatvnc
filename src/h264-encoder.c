@@ -488,6 +488,7 @@ static int find_render_node(char *node, size_t maxlen) {
 		break;
 	}
 
+	// todo: get from config
 	strncpy(node, "/dev/dri/renderD128", maxlen);
 	node[maxlen - 1] = '\0';
 

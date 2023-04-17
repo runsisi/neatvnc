@@ -29,9 +29,6 @@
 #include <gbm.h>
 #endif
 
-#include <libavcodec/avcodec.h>
-#include <libavutil/imgutils.h>
-
 #define UDIV_UP(a, b) (((a) + (b) - 1) / (b))
 #define ALIGN_UP(n, a) (UDIV_UP(n, a) * a)
 #define EXPORT __attribute__((visibility("default")))
@@ -193,7 +190,7 @@ static void nvnc__fb_free(struct nvnc_fb* fb)
 #endif
 			break;
 		case NVNC_FB_AVFRAME:
-			av_frame_free(&fb->frame);
+			abort();
 			break;
 		}
 
@@ -251,39 +248,8 @@ void nvnc_fb_release(struct nvnc_fb* fb)
 
 int nvnc_fb_map(struct nvnc_fb* fb)
 {
-	if (fb->type == NVNC_FB_AVFRAME) {
-		if (fb->addr) {
-			return 0;
-		}
-
-		AVFrame* sw_frame = av_frame_alloc();
-		AVFrame* frame = fb->frame;
-		int r = av_hwframe_transfer_data(sw_frame, frame, 0);
-		if (r < 0) {
-			goto free_frame;
-		}
-		int size = av_image_get_buffer_size(sw_frame->format, sw_frame->width,
-			sw_frame->height, 1);
-		fb->addr = av_malloc(size);
-		r = av_image_copy_to_buffer(fb->addr, size,
-			(const uint8_t * const *)sw_frame->data,
-			(const int *)sw_frame->linesize, sw_frame->format,
-			sw_frame->width, sw_frame->height, 1);
-		if (r < 0) {
-			goto free_data;
-		}
-
-		// assume single planar format
-		fb->stride = sw_frame->linesize[0] / nvnc_fb_get_pixel_size(fb);
-		av_frame_free(&sw_frame);
-		return 0;
-
-free_data:
-		av_freep(&fb->addr);
-		fb->addr = NULL;
-free_frame:
-		av_frame_free(&sw_frame);
-		return -1;
+	if (fb->map_fn) {
+		return fb->map_fn(fb, fb->map_context);
 	}
 
 #ifdef HAVE_GBM
@@ -306,15 +272,8 @@ free_frame:
 
 void nvnc_fb_unmap(struct nvnc_fb* fb)
 {
-	if (fb->type == NVNC_FB_AVFRAME) {
-		if (!fb->addr) {
-			return;
-		}
-
-		av_freep(&fb->addr);
-		fb->addr = NULL;
-		fb->stride = 0;
-		return;
+	if (fb->unmap_fn) {
+		return fb->unmap_fn(fb);
 	}
 
 #ifdef HAVE_GBM

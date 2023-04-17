@@ -51,6 +51,9 @@ struct nvnc_fb {
 
 	/* avframe */
 	AVFrame* frame;
+	nvnc_fb_map_fn map_fn;
+	nvnc_fb_unmap_fn unmap_fn;
+	void* map_context;
 };
 
 void nvnc_fb_hold(struct nvnc_fb* fb);

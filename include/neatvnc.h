@@ -101,6 +101,9 @@ struct nvnc_log_data {
 	int line;
 };
 
+typedef int (*nvnc_fb_map_fn)(struct nvnc_fb*, void* context);
+typedef void (*nvnc_fb_unmap_fn)(struct nvnc_fb*);
+
 typedef void (*nvnc_key_fn)(struct nvnc_client*, uint32_t key,
                             bool is_pressed);
 typedef void (*nvnc_pointer_fn)(struct nvnc_client*, uint16_t x, uint16_t y,

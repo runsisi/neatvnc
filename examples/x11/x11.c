@@ -23,6 +23,7 @@
 #include <X11/extensions/Xcomposite.h>
 
 #include "kmsgrab.h"
+#include "filter.h"
 
 
 static void on_pointer_event(struct nvnc_client* client, uint16_t x, uint16_t y,
@@ -52,6 +53,7 @@ static int find_control_node(char* node, size_t maxlen)
 		break;
 	}
 
+	// todo: get from config
 	strncpy(node, "/dev/dri/card0", maxlen);
 	node[maxlen - 1] = '\0';
 
@@ -59,7 +61,7 @@ static int find_control_node(char* node, size_t maxlen)
 	return r;
 }
 
-static struct nvnc_fb* nvnc_fb_from_avframe(AVFrame* frame, uint32_t format)
+static struct nvnc_fb* nvnc_fb_from_avframe(AVFrame* frame, uint32_t drm_format)
 {
 	struct nvnc_fb* fb = calloc(1, sizeof(*fb));
 	if (!fb)
@@ -70,7 +72,7 @@ static struct nvnc_fb* nvnc_fb_from_avframe(AVFrame* frame, uint32_t format)
 	fb->is_external = true;
 	fb->width = frame->width;
 	fb->height = frame->height;
-	fb->fourcc_format = format;
+	fb->fourcc_format = drm_format;
 	fb->frame = frame;
 	fb->transform = NVNC_TRANSFORM_NORMAL;
 	fb->pts = NVNC_NO_PTS;
@@ -85,9 +87,20 @@ static void on_sigint()
 
 static void on_fb_release(struct nvnc_fb* fb, void* /*context*/)
 {
-	if (fb->is_external) {
-		av_frame_free(&fb->frame);
-	}
+	assert(fb->is_external);
+
+	av_frame_free(&fb->frame);
+}
+
+static void nvnc_fb_set_map_fn(struct nvnc_fb* fb, nvnc_fb_map_fn fn, void* context)
+{
+	fb->map_fn = fn;
+	fb->map_context = context;
+}
+
+static void nvnc_fb_set_unmap_fn(struct nvnc_fb* fb, nvnc_fb_unmap_fn fn)
+{
+	fb->unmap_fn = fn;
 }
 
 static void on_tick(void* obj)
@@ -95,6 +108,7 @@ static void on_tick(void* obj)
 	struct nvnc* server = aml_get_userdata(obj);
 
 	static KMSGrabContext* kms = NULL;
+	static struct pixel_filter *filter = NULL;
 	if (!kms) {
 		kms = calloc(1, sizeof(*kms));
 		kms->format = AV_PIX_FMT_NONE;
@@ -108,16 +122,22 @@ static void on_tick(void* obj)
 		if (r < 0) {
 			goto free_kms;
 		}
+		filter = pixel_filter_create(kms->width, kms->height, kms->drm_format, kms->device_ref, kms->frames_ref);
+		if (!filter) {
+			goto close_kms;
+		}
 	}
 
 	AVFrame* frame = av_frame_alloc();
 	int r = kmsgrab_read_frame(kms, frame);
 	if (r < 0) {
 		// assume EIO and reopen
-		goto close_kms;
+		goto free_frame;
 	}
 
 	struct nvnc_fb* fb = nvnc_fb_from_avframe(frame, kms->drm_format);
+	nvnc_fb_set_map_fn(fb, fb_map, filter);
+	nvnc_fb_set_unmap_fn(fb, fb_unmap);
 	nvnc_fb_set_release_fn(fb, on_fb_release, NULL);
 	struct pixman_region16 damage;
 	pixman_region_init_rect(&damage, 0, 0, fb->width, fb->height);
@@ -127,8 +147,11 @@ static void on_tick(void* obj)
 
 	return;
 
-close_kms:
+free_frame:
 	av_frame_free(&frame);
+	pixel_filter_destroy(filter);
+	filter = NULL;
+close_kms:
 	kmsgrab_read_close(kms);
 	kms = NULL;
 free_kms:
