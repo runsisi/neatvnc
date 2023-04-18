@@ -103,8 +103,8 @@ static int pixel_filter__init_filters(struct pixel_filter* self)
 	char filter[128] = "";
 	const char* fmt = "hwmap=mode=direct:derive_device=vaapi"
 					  ",hwdownload,format=pix_fmts=%s";
-	snprintf(filter, sizeof(filter), fmt,
-		av_get_pix_fmt_name(self->av_pixel_format));
+	snprintf(filter, sizeof(filter), fmt, "rgb32"
+		/*av_get_pix_fmt_name(self->av_pixel_format)*/);
 
 	rc = avfilter_graph_parse(self->filter_graph,
 		filter,
